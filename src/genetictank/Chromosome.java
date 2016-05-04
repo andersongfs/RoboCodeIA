@@ -8,17 +8,26 @@ public class Chromosome implements Comparable<Chromosome> {
 	private int fitness;
 
 	private List<Double> rotations;
-	private List<Double> moves;
+	private List<Double> distances;
 	private int nextRotation;
 	private int nextMove;
 
 	private double bulletPower;
 
+	public Chromosome(int id, List<Double> rotations, List<Double> moves, double bulletPower) {
+		setId(id);
+		setRotations(rotations);
+		setDistances(moves);
+		setBulletPower(bulletPower);
+		this.fitness = 0;
+		this.nextRotation = 0;
+		this.nextMove = 0;
+	}
 	public Chromosome(int id) {
-		this.id = id;
-		fitness = 0;
-		nextRotation = 0;
-		nextMove = 0;
+		setId(id);
+		this.fitness = 0;
+		this.nextRotation = 0;
+		this.nextMove = 0;
 	}
 
 	public int getNextRotation(){
@@ -31,7 +40,7 @@ public class Chromosome implements Comparable<Chromosome> {
 	}
 
 	public int getNextMove(){
-		if(nextMove == moves.size()){
+		if(nextMove == distances.size()){
 			nextMove = 0;
 		}
 		int aux = nextMove;
@@ -73,11 +82,11 @@ public class Chromosome implements Comparable<Chromosome> {
 	}
 
 	public List<Double> getDistances() {
-		return moves;
+		return distances;
 	}
 
-	public void setMoveDistance(List<Double> newDistances) {
-		this.moves = newDistances;
+	public void setDistances(List<Double> newDistances) {
+		this.distances = newDistances;
 	}
 
 	@Override
@@ -87,6 +96,10 @@ public class Chromosome implements Comparable<Chromosome> {
 		if (fitness > c.fitness)
 			return 1;
 		return 0;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 }

@@ -1,13 +1,7 @@
 package genetictank;
 import robocode.*;
-//import java.awt.Color;
 
-// API help : http://robocode.sourceforge.net/docs/robocode/robocode/Robot.html
-
-/**
- * AIGeneticRobot - a robot by (your name here)
- */
-public class AIGeneticRobot extends Robot
+public class GeneticRobot extends Robot
 {
 	/**
 	 * run: AIGeneticRobot's default behavior
@@ -45,12 +39,12 @@ public class AIGeneticRobot extends Robot
 		// Replace the next line with any behavior you would like
 		back(10);
 	}
-	
+
 	/**
 	 * onHitWall: What to do when you hit a wall
 	 */
 	public void onHitWall(HitWallEvent e) {
 		// Replace the next line with any behavior you would like
 		back(20);
-	}	
+	}
 }

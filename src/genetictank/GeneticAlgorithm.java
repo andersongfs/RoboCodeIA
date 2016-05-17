@@ -14,7 +14,7 @@ public class GeneticAlgorithm {
 	private int MIN_BULLET_POWER = 1;
 	private int MAX_BULLET_POWER = 3;
 	private int MAX_NUMBER_OF_GENERATIONS = 9999;
-	private int RENEWER_POPULATION_RATE = 20;
+	private int RENEWER_POPULATION_RATE = 5;
 	private int CHROMOSOME_PARAMS_SIZE = 9; // QUANTITY OF MOVES AND ROTATIONS THAT A CHROMOSOME MUST HAVE
 	private int MUTATION_RATE = 20;
 
@@ -71,31 +71,39 @@ public class GeneticAlgorithm {
 		
 		List<Chromosome> bestsChromosomes = selection(population);
 		List<Chromosome> children = new ArrayList<Chromosome>();
-		int size = bestsChromosomes.size() - 1;
-		
-		while(children.size() < bestsChromosomes.size()){
+		System.out.println((POPULATION_SIZE - RENEWER_POPULATION_RATE + 1)/2);
+		for(int i = 0; i < (POPULATION_SIZE - RENEWER_POPULATION_RATE + 1)/2; i++){
 			//TODO implement the roulette wheel method
-			Chromosome parent1 = bestsChromosomes.get(randomInt(0, size));
-			Chromosome parent2 = bestsChromosomes.get(randomInt(0, size));
 			
+			Chromosome parent1 = bestsChromosomes.get(randomInt(0, bestsChromosomes.size() - 1));
+			Chromosome parent2 = bestsChromosomes.get(randomInt(0, bestsChromosomes.size() - 1));
+			System.out.println("p1: " + parent1.getId());
+			System.out.println("p2: " + parent2.getId());
 			Chromosome[] newBorns = crossOver(parent1, parent2);
 			children.add(newBorns[0]);
 			children.add(newBorns[1]);
 		}
-		
-		List<Chromosome> newPopulation = population.getPopulation();
-		
-		for (int i = 0; i < children.size(); i++) {
+
+		for(int i=0; i<population.getPopulationSize();i++){
+			System.out.println("OLD: "+population.get(i).getId() + "; Fitness: " + population.get(i).getFitness());
+		}
+		List<Chromosome> newPopulation= new ArrayList<Chromosome>();
+		for(int i =0; i<population.getPopulationSize();i++){
+			newPopulation.add(population.get(i));
+		}
+		for (int i = 0; i < children.size()-5; i++) {
 			newPopulation.set(i, children.get(i));
 		}
 		for (int i = 0; i < newPopulation.size(); i++) {
 			newPopulation.get(i).setFitness(0);
 		}
+
 		numberOfGenerations++;
-		System.out.println("Generations: "+numberOfGenerations);
-		System.out.println("Children: "+Arrays.toString(children.toArray()));
-		System.out.println("OLD: "+Arrays.toString(population.getPopulation().toArray()));
-		System.out.println("NEW :"+Arrays.toString(newPopulation.toArray()));
+		System.out.println("Geração: "+numberOfGenerations);
+		for(int i=0; i<population.getPopulationSize();i++){
+			System.out.println("NEW: "+newPopulation.get(i).getId() + "; Fitness: " + newPopulation.get(i).getFitness());
+		}
+		
 		population.setPopulation(newPopulation);
 	}
 	
@@ -150,7 +158,6 @@ public class GeneticAlgorithm {
 			rotationR2.add(c1.getNextRotations().get(i));
 			distanceR2.add(c1.getDistances().get(i));
 		}
-		
 		r1.setDistances(distanceR1);
 		r1.setRotations(rotationR1);
 		
@@ -167,7 +174,7 @@ public class GeneticAlgorithm {
 		
 		mutate(r1);
 		mutate(r2);
-		
+
 		Chromosome[] result = {r1,r2};
 		return result;
 	}
@@ -206,6 +213,9 @@ public class GeneticAlgorithm {
 	
 	public Chromosome getCurrentChromosome(){
 		return currentChromo;
+	}
+	public void roundWon() {
+		currentChromo.increaseFitness();
 	}
 
 }

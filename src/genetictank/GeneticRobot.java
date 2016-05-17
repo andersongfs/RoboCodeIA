@@ -21,8 +21,6 @@ public class GeneticRobot extends AdvancedRobot{
 	 * onScannedRobot: What to do when you see another robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) { 
-		//double bearing = e.getBearing();
-		//turnGunRight(bearing);
 		fire(ga.getCurrentChromosome().getBulletPower());
 	}
 	
@@ -31,21 +29,26 @@ public class GeneticRobot extends AdvancedRobot{
 	 * onHitByBullet: What to do when you're hit by a bullet
 	 */
 /*	public void onHitByBullet(HitByBulletEvent e) {
-		setTurnLeft(ga.getCurrentChromosome().getNextRotation().intValue());
+		setTurnRight(ga.getCurrentChromosome().getNextRotation().intValue());
+		ahead(ga.getCurrentChromosome().getNextMove().intValue());
 
-	}*/
-	
+	}
+	*/
 
 	/**
 	 * onHitWall: What to do when you hit a wall
 	 */
-/*	public void onHitWall() {
-		back(ga.getCurrentChromosome().getNextMove().intValue());
-		setTurnLeft(ga.getCurrentChromosome().getNextRotation().intValue());
+/*	public void onHitWall(HitWallEvent e) {
+		turnRight(e.getBearing());
+		doNothing();
 	}*/
-	
+
 	public void onRoundEnded(RoundEndedEvent e){
 		ga.roundEnded();
+	}
+	
+	public void onWin(WinEvent event){
+		ga.roundWon();
 	}
 	
 	public void doMove(){

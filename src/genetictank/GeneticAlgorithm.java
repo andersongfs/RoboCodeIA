@@ -1,6 +1,7 @@
 package genetictank;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -19,12 +20,30 @@ public class GeneticAlgorithm {
 
 	private Population population;
 	private int numberOfGenerations =0;
+	
+	private Chromosome currentChromo;
+	private int currentChromoIndex = 0;
+	private int roundCounter = 0;
 
+	private static GeneticAlgorithm ag;
+	
+	private GeneticAlgorithm(){
+		renewPopulation();
+		
+	}
+	public static GeneticAlgorithm getInstance(){
+		if(ag == null){
+			ag = new GeneticAlgorithm();
+		}
+		return ag;
+		
+	}
 	public void generateRandomPopulation(){
 		population = new Population(POPULATION_SIZE);
 		for(int i = 0; i < POPULATION_SIZE; i++){
 			population.addChromosome(generateRandomChromosome(i));
 		}
+		currentChromo = population.get(currentChromoIndex);
 	}
 
 	private Chromosome generateRandomChromosome(int id) {
@@ -40,12 +59,11 @@ public class GeneticAlgorithm {
 		chromosome.setRotations(rotations);
 		chromosome.setDistances(moves);
 		chromosome.setBulletPower(randomInt(MIN_BULLET_POWER, MAX_BULLET_POWER));
-
 		return chromosome;
 
 	}
 	
-	private void renewPopulation(){
+	public void renewPopulation(){
 		if(population == null ){
 			generateRandomPopulation();
 			return;
@@ -53,7 +71,7 @@ public class GeneticAlgorithm {
 		
 		List<Chromosome> bestsChromosomes = selection(population);
 		List<Chromosome> children = new ArrayList<Chromosome>();
-		int size = bestsChromosomes.size();
+		int size = bestsChromosomes.size() - 1;
 		
 		while(children.size() < bestsChromosomes.size()){
 			//TODO implement the roulette wheel method
@@ -74,6 +92,10 @@ public class GeneticAlgorithm {
 			newPopulation.get(i).setFitness(0);
 		}
 		numberOfGenerations++;
+		System.out.println("Generations: "+numberOfGenerations);
+		System.out.println("Children: "+Arrays.toString(children.toArray()));
+		System.out.println("OLD: "+Arrays.toString(population.getPopulation().toArray()));
+		System.out.println("NEW :"+Arrays.toString(newPopulation.toArray()));
 		population.setPopulation(newPopulation);
 	}
 	
@@ -92,7 +114,8 @@ public class GeneticAlgorithm {
 	 */
 	private List<Chromosome> selection(Population population){
 		Collections.sort(population.getPopulation());
-		return population.getPopulation().subList(RENEWER_POPULATION_RATE, POPULATION_SIZE-1);
+		int firstIndex = POPULATION_SIZE-RENEWER_POPULATION_RATE;
+		return population.getPopulation().subList(firstIndex, POPULATION_SIZE-1);
 	}
 	
 	/**
@@ -131,7 +154,7 @@ public class GeneticAlgorithm {
 		r1.setDistances(distanceR1);
 		r1.setRotations(rotationR1);
 		
-		r2.setRotations(rotationR2);
+		r2.setDistances(distanceR2);
 		r2.setRotations(rotationR2);
 		
 		if(randomInt(0,1)!= 0){
@@ -164,6 +187,25 @@ public class GeneticAlgorithm {
 	private int randomInt(int start, int end) {
 		Random rand = new Random();
 		return rand.nextInt(end - start + 1) + start;
+	}
+	
+	public void roundEnded(){
+		if(currentChromoIndex < population.getPopulationSize()-1){
+			currentChromoIndex++;
+			currentChromo = population.get(currentChromoIndex);
+		}else{
+			currentChromoIndex = 0;
+			currentChromo = population.get(currentChromoIndex);
+		}
+		roundCounter++;
+		if(roundCounter%100==0){
+			renewPopulation();
+		}
+		
+	}
+	
+	public Chromosome getCurrentChromosome(){
+		return currentChromo;
 	}
 
 }

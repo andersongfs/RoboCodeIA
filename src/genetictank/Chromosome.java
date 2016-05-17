@@ -30,20 +30,21 @@ public class Chromosome implements Comparable<Chromosome> {
 		this.nextMove = 0;
 	}
 
-	public int getNextRotation(){
+	public Double getNextRotation(){
 		if(nextRotation == rotations.size()){
 			nextRotation = 0;
 		}
-		int aux = nextRotation;
+		Double aux = rotations.get(nextRotation);
 		nextRotation++;
 		return aux;
 	}
 
-	public int getNextMove(){
+	public Double getNextMove(){
+		
 		if(nextMove == distances.size()){
 			nextMove = 0;
 		}
-		int aux = nextMove;
+		Double aux = distances.get(nextMove);
 		nextMove++;
 		return aux;
 	}

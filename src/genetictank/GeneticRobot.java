@@ -1,61 +1,53 @@
 package genetictank;
-import robocode.*;
 
-public class GeneticRobot extends AdvancedRobot{
-	GeneticAlgorithm ga = GeneticAlgorithm.getInstance();
+import robocode.AdvancedRobot;
+import robocode.BattleEndedEvent;
+import robocode.MoveCompleteCondition;
+import robocode.RoundEndedEvent;
+import robocode.ScannedRobotEvent;
+import robocode.WinEvent;
+
+/**
+ * GeneticRobot - A robot with genetic movement.
+ */
+public class GeneticRobot extends AdvancedRobot {
 	
+	private int move;
 	
+	Chromosome chromosome;
 	
-	/**
-	 * run: AIGeneticRobot's default behavior
-	 */
 	public void run() {
-		
-			
-		while(true) {
+		GeneticAlgorithm.start(this);
+		move = 0;
+		while (true) {
 			doMove();
 		}
 	}
-
-	/**
-	 * onScannedRobot: What to do when you see another robot
-	 */
-	public void onScannedRobot(ScannedRobotEvent e) { 
-		fire(ga.getCurrentChromosome().getBulletPower());
+	
+	public void onScannedRobot(ScannedRobotEvent e) {
+		fire(chromosome.getBulletPower());
 	}
 	
-
-	/**
-	 * onHitByBullet: What to do when you're hit by a bullet
-	 */
-/*	public void onHitByBullet(HitByBulletEvent e) {
-		setTurnRight(ga.getCurrentChromosome().getNextRotation().intValue());
-		ahead(ga.getCurrentChromosome().getNextMove().intValue());
-
-	}
-	*/
-
-	/**
-	 * onHitWall: What to do when you hit a wall
-	 */
-/*	public void onHitWall(HitWallEvent e) {
-		turnRight(e.getBearing());
-		doNothing();
-	}*/
-
-	public void onRoundEnded(RoundEndedEvent e){
-		ga.roundEnded();
+	public void onWin(WinEvent e) {
+		GeneticAlgorithm.onRobotWin(chromosome);
 	}
 	
-	public void onWin(WinEvent event){
-		ga.roundWon();
+	public void onRoundEnded(RoundEndedEvent e) {
+		GeneticAlgorithm.onRoundEnded(chromosome);
 	}
 	
-	public void doMove(){
-		setAhead(ga.getCurrentChromosome().getNextMove().intValue());
-		setTurnRight(ga.getCurrentChromosome().getNextRotation().intValue());
+	public void onBattleEnded(BattleEndedEvent e) {
+		GeneticAlgorithm.onBattleEnded(chromosome);
+	}
+	
+	private void doMove() {
+		setAhead(chromosome.getDistances().get(move));
+		setTurnRight(chromosome.getRotations().get(move));
 		waitFor(new MoveCompleteCondition(this));
 		
+		move++;
+		if(move >= chromosome.getRotations().size()) {
+			move = 0;
+		}
 	}
-	
 }

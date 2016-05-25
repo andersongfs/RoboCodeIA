@@ -1,221 +1,209 @@
 package genetictank;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class GeneticAlgorithm {
-	/**
-	 * Params to geneticAlgorithm
-	 */
-	private int POPULATION_SIZE = 20;
-	private int MIN_BULLET_POWER = 1;
-	private int MAX_BULLET_POWER = 3;
-	private int MAX_NUMBER_OF_GENERATIONS = 9999;
-	private int RENEWER_POPULATION_RATE = 5;
-	private int CHROMOSOME_PARAMS_SIZE = 9; // QUANTITY OF MOVES AND ROTATIONS THAT A CHROMOSOME MUST HAVE
-	private int MUTATION_RATE = 20;
-
-	private Population population;
-	private int numberOfGenerations =0;
+public class GeneticAlgorithm{
 	
-	private Chromosome currentChromo;
-	private int currentChromoIndex = 0;
-	private int roundCounter = 0;
-
-	private static GeneticAlgorithm ag;
+	private static int POPULATION_SIZE = 20;
+	private static int RENEW_RATE = 15;
+	private static int MAX_ROUNDS = 5;
 	
-	private GeneticAlgorithm(){
-		renewPopulation();
+	private static int MUTATION_RATIO = 20; 
+	private static int MAX_GENES = 6;
+	
+	private static int MIN_BULLET_POWER = 1;
+	private static int MAX_BULLET_POWER = 3;
+	private static int BULLET_POWER_PRECISION = 10;
+	
+	private static List<Chromosome> chromosomes;
+	
+	private static List<Double> relativeStatistics;
+	private static List<Double> absoluteStatistics;
+	
+	private static int pos;
+	private static int round;
+	
+	private static int absoluteWins;
+	private static int absoluteRounds;
+	private static int relativeWins;
+	private static int relativeRounds;
+	
+	public static void start(GeneticRobot robot) {
 		
-	}
-	public static GeneticAlgorithm getInstance(){
-		if(ag == null){
-			ag = new GeneticAlgorithm();
+		if (chromosomes == null) {
+			chromosomes = new ArrayList<Chromosome>();
+			
+			for (int i = 0; i < POPULATION_SIZE; i++)
+				chromosomes.add(generateRandomChromosome(i));
+			
+			pos = 0;
+			round = 0;
+			absoluteWins = 0;
+			absoluteRounds = 0;
+			relativeWins = 0;
+			relativeRounds = 0;
+			
+			relativeStatistics = new ArrayList<Double>();
+			absoluteStatistics = new ArrayList<Double>();
 		}
-		return ag;
 		
-	}
-	public void generateRandomPopulation(){
-		population = new Population(POPULATION_SIZE);
-		for(int i = 0; i < POPULATION_SIZE; i++){
-			population.addChromosome(generateRandomChromosome(i));
+		if (round == MAX_ROUNDS) {
+			pos++;
+			round = 0;
 		}
-		currentChromo = population.get(currentChromoIndex);
+		
+		if (pos == POPULATION_SIZE) {
+			pos = 0;
+			round = 0;
+			renewGeneration();
+			relativeStatistics.add((((double)relativeWins)/relativeRounds)*100);
+			absoluteStatistics.add((((double)absoluteWins)/absoluteRounds)*100);
+			relativeWins = 0;
+			relativeRounds = 0;
+		}
+		printStatistics();
+		System.out.println("Going with robot " + pos + " of " + chromosomes.size() + " in round " + round);
+		robot.chromosome = chromosomes.get(pos);
 	}
-
-	private Chromosome generateRandomChromosome(int id) {
+	
+	private static Chromosome generateRandomChromosome(int id) {
 		Chromosome chromosome = new Chromosome(id);
-		List<Double> rotations = new ArrayList<Double>();
-		List<Double> moves = new ArrayList<Double>();
-
-		for(int i = 0; i < CHROMOSOME_PARAMS_SIZE; i++) {
-			rotations.add((double)randomInt(0, 180));
-			moves.add((double)randomInt(100, 500));
+		
+		List<Double> moveRotation = new ArrayList<Double>();
+		List<Double> moveDistance = new ArrayList<Double>();
+		
+		int moves = randomInt(1,MAX_GENES);
+		
+		for(int i = 0; i < moves; i++) {
+			moveRotation.add((double)randomInt(0, 180));
+			moveDistance.add((double)randomInt(100, 500));
 		}
-
-		chromosome.setRotations(rotations);
-		chromosome.setDistances(moves);
-		chromosome.setBulletPower(randomInt(MIN_BULLET_POWER, MAX_BULLET_POWER));
+		
+		chromosome.setRotations(moveRotation);
+		chromosome.setDistances(moveDistance);
+		
+		int begin = MIN_BULLET_POWER * BULLET_POWER_PRECISION;
+		int end = MAX_BULLET_POWER * BULLET_POWER_PRECISION;
+		chromosome.setBulletPower(((double)randomInt(begin, end)) / BULLET_POWER_PRECISION);
+		
 		return chromosome;
-
 	}
 	
-	public void renewPopulation(){
-		if(population == null ){
-			generateRandomPopulation();
-			return;
+	public static void onRobotWin(Chromosome chromosome) {
+		chromosome.increaseFitness();
+		absoluteWins++;
+		relativeWins++;
+	}
+	
+	public static void onRoundEnded(Chromosome chromosome) {
+		round++;
+		absoluteRounds++;
+		relativeRounds++;
+	}
+	
+	public static void onBattleEnded(Chromosome chromosome) {
+		System.out.println("========== Relative Statistics ==========");
+		for(int i = 0; i < relativeStatistics.size(); i++) {
+			//System.out.println("Iteration " + i + ": " + relativeStatistics.get(i) + "%.");
+			System.out.println(relativeStatistics.get(i));
 		}
-		
-		List<Chromosome> bestsChromosomes = selection(population);
-		List<Chromosome> children = new ArrayList<Chromosome>();
-		System.out.println((POPULATION_SIZE - RENEWER_POPULATION_RATE + 1)/2);
-		for(int i = 0; i < (POPULATION_SIZE - RENEWER_POPULATION_RATE + 1)/2; i++){
-			//TODO implement the roulette wheel method
+		System.out.println("========== Absolute Statistics ==========");
+		for(int i = 0; i < absoluteStatistics.size(); i++) {
+			//System.out.println("Iteration " + i + ": " + absoluteStatistics.get(i) + "%.");
+			System.out.println(absoluteStatistics.get(i));
+		}
+	}
+	
+	private static void renewGeneration() {
+		Collections.sort(chromosomes);
+		for(int i = 0; i < RENEW_RATE; i++) {
+			int partition = randomInt(0, 1);
+			int beggining = i;
+			if(partition == 1)
+				beggining = RENEW_RATE;
 			
-			Chromosome parent1 = bestsChromosomes.get(randomInt(0, bestsChromosomes.size() - 1));
-			Chromosome parent2 = bestsChromosomes.get(randomInt(0, bestsChromosomes.size() - 1));
-			System.out.println("p1: " + parent1.getId());
-			System.out.println("p2: " + parent2.getId());
-			Chromosome[] newBorns = crossOver(parent1, parent2);
-			children.add(newBorns[0]);
-			children.add(newBorns[1]);
-		}
-
-		for(int i=0; i<population.getPopulationSize();i++){
-			System.out.println("OLD: "+population.get(i).getId() + "; Fitness: " + population.get(i).getFitness());
-		}
-		List<Chromosome> newPopulation= new ArrayList<Chromosome>();
-		for(int i =0; i<population.getPopulationSize();i++){
-			newPopulation.add(population.get(i));
-		}
-		for (int i = 0; i < children.size()-5; i++) {
-			newPopulation.set(i, children.get(i));
-		}
-		for (int i = 0; i < newPopulation.size(); i++) {
-			newPopulation.get(i).setFitness(0);
-		}
-
-		numberOfGenerations++;
-		System.out.println("Geração: "+numberOfGenerations);
-		for(int i=0; i<population.getPopulationSize();i++){
-			System.out.println("NEW: "+newPopulation.get(i).getId() + "; Fitness: " + newPopulation.get(i).getFitness());
-		}
-		
-		population.setPopulation(newPopulation);
-	}
-	
-	public int getNumberOfGenerations() {
-		return numberOfGenerations;
-	}
-
-	public void setNumberOfGenerations(int numberOfGenerations) {
-		this.numberOfGenerations = numberOfGenerations;
-	}
-
-	/**
-	 * Select the best chromosomes from a given population based on the renewer rate
-	 * @param population
-	 * @return
-	 */
-	private List<Chromosome> selection(Population population){
-		Collections.sort(population.getPopulation());
-		int firstIndex = POPULATION_SIZE-RENEWER_POPULATION_RATE;
-		return population.getPopulation().subList(firstIndex, POPULATION_SIZE-1);
-	}
-	
-	/**
-	 * returns a list with the two chromosomes generated by the crossOver of the two given ones 
-	 * @param c1 
-	 * @param c2
-	 * @return
-	 */
-	private Chromosome[] crossOver(Chromosome c1, Chromosome c2){
-		Chromosome r1 = new Chromosome(randomInt(0, 999999999));
-		Chromosome r2 = new Chromosome(randomInt(0, 999999999));
-		
-		int splitPoint = randomInt(0, CHROMOSOME_PARAMS_SIZE-1);
-		
-		List<Double> rotationR1 = new ArrayList<Double>();
-		List<Double> rotationR2 = new ArrayList<Double>();
-		List<Double> distanceR1 = new ArrayList<Double>();
-		List<Double> distanceR2 = new ArrayList<Double>();
-		
-		for (int i = 0; i < splitPoint; i++) {
-			rotationR1.add(c1.getNextRotations().get(i));
-			distanceR1.add(c1.getDistances().get(i));
-		
-			rotationR2.add(c2.getNextRotations().get(i));
-			distanceR2.add(c2.getDistances().get(i));
-		}
-		
-		for (int i = splitPoint; i < CHROMOSOME_PARAMS_SIZE; i++) {
-			rotationR1.add(c2.getNextRotations().get(i));
-			distanceR1.add(c2.getDistances().get(i));
+			Chromosome chromosome = chromosomes.get(i);
+			int parent1 = randomInt(beggining, POPULATION_SIZE-1);
+			int parent2;			
+			if(parent1 == POPULATION_SIZE-1) {
+				parent2 = POPULATION_SIZE-2;
+			} else {
+				parent2 = randomInt(parent1+1, POPULATION_SIZE-1);
+			}
+			int geneSize = chromosomes.get(parent1).getDistances().size();
+			int splitPoint = randomInt((geneSize+1)/2, Math.min(geneSize, MAX_GENES/2));
 			
-			rotationR2.add(c1.getNextRotations().get(i));
-			distanceR2.add(c1.getDistances().get(i));
-		}
-		r1.setDistances(distanceR1);
-		r1.setRotations(rotationR1);
-		
-		r2.setDistances(distanceR2);
-		r2.setRotations(rotationR2);
-		
-		if(randomInt(0,1)!= 0){
-			r1.setBulletPower(c1.getBulletPower());
-			r2.setBulletPower(c2.getBulletPower());
-		}else{
-			r1.setBulletPower(c2.getBulletPower());
-			r2.setBulletPower(c1.getBulletPower());
+			crossOver(geneSize,splitPoint,parent1,parent2,chromosome);
+						
 		}
 		
-		mutate(r1);
-		mutate(r2);
-
-		Chromosome[] result = {r1,r2};
-		return result;
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			chromosomes.get(i).setFitness(0);
+		}
 	}
 	
-	private void mutate(Chromosome c){
-		boolean isUpToMutation = randomInt(0, MUTATION_RATE) == 5;
-		if(isUpToMutation){
-			int rotationSize = c.getNextRotations().size()-1;
-			int distancesSize = c.getDistances().size()-1;
-			Double newRotation = (double) randomInt(0, 180);
-			Double newDistance = (double) randomInt(100, 500);
-			c.getNextRotations().set(randomInt(0, rotationSize), newRotation);
-			c.getDistances().set(randomInt(0, distancesSize),newDistance);			
+	private static void crossOver(int chSize, int partSize,int first, int second,Chromosome chromosome){
+		List<Double> moveRotation = new ArrayList<Double>();
+		List<Double> moveDistance = new ArrayList<Double>();
+		
+		for(int j = 0; j < partSize; j++) {
+			double mr = chromosomes.get(first).getRotations().get(j);
+			double md = chromosomes.get(first).getDistances().get(j);
+			
+			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
+			if(hasMutation) {
+				mr += randomInt(-45,45);
+				md += randomInt(-100,100);
+			}
+			
+			moveRotation.add(mr);
+			moveDistance.add(md);
 		}
+		
+		chSize = chromosomes.get(second).getDistances().size();
+		partSize = randomInt((chSize+1)/2, Math.min(chSize, MAX_GENES/2));
+		
+		for(int j = chSize-partSize; j < chSize; j++) {
+			double mr = chromosomes.get(second).getRotations().get(j);
+			double md = chromosomes.get(second).getDistances().get(j);
+			
+			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
+			if(hasMutation) {
+				mr += randomInt(-20,20);
+				md += randomInt(-50,50);
+			}
+			
+			moveRotation.add(mr);
+			moveDistance.add(md);
+		}
+		
+		chromosome.setRotations(moveRotation);
+		chromosome.setDistances(moveDistance);
+		
+		double totalBulletPower = chromosomes.get(first).getBulletPower() +
+							chromosomes.get(second).getBulletPower();
+		
+		chromosome.setBulletPower(totalBulletPower / 2);
+		
 	}
-
-	private int randomInt(int start, int end) {
+	
+	private static void printStatistics() {
+		if(relativeRounds > 0)
+			System.out.println("Relative Win ratio: " + ((((double)relativeWins)/relativeRounds)*100) + "%");
+		if(absoluteRounds > 0)
+			System.out.println("Absolute Win ratio: " + ((((double)absoluteWins)/absoluteRounds)*100) + "%");
+		
+		System.out.println("relativeWins: " + relativeWins);
+		System.out.println("relativeRounds: " + relativeRounds);
+		System.out.println("absoluteWins: " + absoluteWins);
+		System.out.println("absoluteRounds: " + absoluteRounds);
+	}
+	
+	private static int randomInt(int start, int end) {
 		Random rand = new Random();
 		return rand.nextInt(end - start + 1) + start;
 	}
-	
-	public void roundEnded(){
-		if(currentChromoIndex < population.getPopulationSize()-1){
-			currentChromoIndex++;
-			currentChromo = population.get(currentChromoIndex);
-		}else{
-			currentChromoIndex = 0;
-			currentChromo = population.get(currentChromoIndex);
-		}
-		roundCounter++;
-		if(roundCounter%100==0){
-			renewPopulation();
-		}
-		
-	}
-	
-	public Chromosome getCurrentChromosome(){
-		return currentChromo;
-	}
-	public void roundWon() {
-		currentChromo.increaseFitness();
-	}
-
 }

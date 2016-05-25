@@ -145,13 +145,13 @@ public class GeneticAlgorithm{
 		}
 	}
 	
-	private static void crossOver(int chSize, int partSize,int first, int second,Chromosome chromosome){
+	private static void crossOver(int geneSize, int splitPoint,int parent1, int parent2,Chromosome chromosome){
 		List<Double> moveRotation = new ArrayList<Double>();
 		List<Double> moveDistance = new ArrayList<Double>();
 		
-		for(int j = 0; j < partSize; j++) {
-			double mr = chromosomes.get(first).getRotations().get(j);
-			double md = chromosomes.get(first).getDistances().get(j);
+		for(int j = 0; j < splitPoint; j++) {
+			double mr = chromosomes.get(parent1).getRotations().get(j);
+			double md = chromosomes.get(parent1).getDistances().get(j);
 			
 			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
 			if(hasMutation) {
@@ -163,12 +163,12 @@ public class GeneticAlgorithm{
 			moveDistance.add(md);
 		}
 		
-		chSize = chromosomes.get(second).getDistances().size();
-		partSize = randomInt((chSize+1)/2, Math.min(chSize, MAX_GENES/2));
+		geneSize = chromosomes.get(parent2).getDistances().size();
+		splitPoint = randomInt((geneSize+1)/2, Math.min(geneSize, MAX_GENES/2));
 		
-		for(int j = chSize-partSize; j < chSize; j++) {
-			double mr = chromosomes.get(second).getRotations().get(j);
-			double md = chromosomes.get(second).getDistances().get(j);
+		for(int j = geneSize-splitPoint; j < geneSize; j++) {
+			double mr = chromosomes.get(parent2).getRotations().get(j);
+			double md = chromosomes.get(parent2).getDistances().get(j);
 			
 			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
 			if(hasMutation) {
@@ -183,8 +183,8 @@ public class GeneticAlgorithm{
 		chromosome.setRotations(moveRotation);
 		chromosome.setDistances(moveDistance);
 		
-		double totalBulletPower = chromosomes.get(first).getBulletPower() +
-							chromosomes.get(second).getBulletPower();
+		double totalBulletPower = chromosomes.get(parent1).getBulletPower() +
+							chromosomes.get(parent2).getBulletPower();
 		
 		chromosome.setBulletPower(totalBulletPower / 2);
 		

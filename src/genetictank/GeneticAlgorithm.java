@@ -1,5 +1,9 @@
 package genetictank;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +19,7 @@ public class GeneticAlgorithm{
 	private static int MIN_BULLET_POWER = 1;
 	private static int MAX_BULLET_POWER = 3;
 	private static int BULLET_POWER_PRECISION = 10;
-	private static List<Chromosome> chromosomes;
+	private static List<Chromosome> population;
 	private static List<Double> partilStatistics;
 	private static List<Double> totalStatistics;
 	private static int initialPosition;
@@ -24,9 +28,22 @@ public class GeneticAlgorithm{
 	private static int totalNumberOfRounds;
 	private static int partialNumberOfWins;
 	private static int partialNumberOfRounds;
+	private static File log;
+	private static FileWriter out;
+	private static BufferedWriter writer;
 	
 	public static void start(GeneticRobot robot) {
-		if (chromosomes == null) {
+		if(log == null || out == null || writer == null){
+			log = new File("BattleLogs.csv");
+			out=null;
+			try {
+				out = new FileWriter(log);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			writer = new BufferedWriter(out);
+		}
+		if (population == null) {
 			generateRandomPopulation();			
 			initialPosition = 0;
 			totalNumberOfRounds = 0;
@@ -51,8 +68,8 @@ public class GeneticAlgorithm{
 			partialNumberOfRounds = 0;
 		}
 		showResults();
-		System.out.println("The battle has started with the robot of number" + initialPosition + " out of " + chromosomes.size() + "! Round number: " + round);
-		robot.chromosome = chromosomes.get(initialPosition);
+		System.out.println("The battle has started with the robot of number" + initialPosition + " out of " + population.size() + "! Round number: " + round);
+		robot.chromosome = population.get(initialPosition);
 	}
 	
 
@@ -80,9 +97,9 @@ public class GeneticAlgorithm{
 	}
 	
 	private static void generateRandomPopulation() {
-		chromosomes = new ArrayList<Chromosome>();		
+		population = new ArrayList<Chromosome>();		
 		for (int i = 0; i < POPULATION_SIZE; i++)
-			chromosomes.add(generateRandomChromosome(i));
+			population.add(generateRandomChromosome(i));
 	}
 
 	
@@ -107,17 +124,23 @@ public class GeneticAlgorithm{
 		for(int i = 0; i < totalStatistics.size(); i++) {
 			System.out.println(totalStatistics.get(i));
 		}
+		try {
+			writer.close();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static void renewGeneration() {
-		Collections.sort(chromosomes);
+		Collections.sort(population);
 		for(int i = 0; i < RENEW_RATE; i++) {
 			int partition = randomInt(0, 1);
 			int beggining = i;
 			if(partition == 1)
 				beggining = RENEW_RATE;
 			
-			Chromosome chromosome = chromosomes.get(i);
+			Chromosome chromosome = population.get(i);
 			int parent1 = randomInt(beggining, POPULATION_SIZE-1);
 			int parent2;			
 			if(parent1 == POPULATION_SIZE-1) {
@@ -125,14 +148,14 @@ public class GeneticAlgorithm{
 			} else {
 				parent2 = randomInt(parent1+1, POPULATION_SIZE-1);
 			}
-			int geneSize = chromosomes.get(parent1).getDistances().size();
+			int geneSize = population.get(parent1).getDistances().size();
 			int splitPoint = randomInt((geneSize+1)/2, Math.min(geneSize, MAX_GENES/2));
 			
 			crossOver(geneSize,splitPoint,parent1,parent2,chromosome);
 		}
 		
 		for (int i = 0; i < POPULATION_SIZE; i++) {
-			chromosomes.get(i).setFitness(0);
+			population.get(i).setFitness(0);
 		}
 	}
 	
@@ -140,8 +163,8 @@ public class GeneticAlgorithm{
 		List<Double> moveRotation = new ArrayList<Double>();
 		List<Double> moveDistance = new ArrayList<Double>();
 		for(int j = 0; j < splitPoint; j++) {
-			double mr = chromosomes.get(parent1).getRotations().get(j);
-			double md = chromosomes.get(parent1).getDistances().get(j);
+			double mr = population.get(parent1).getRotations().get(j);
+			double md = population.get(parent1).getDistances().get(j);
 			
 			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
 			if(hasMutation) {
@@ -152,12 +175,12 @@ public class GeneticAlgorithm{
 			moveDistance.add(md);
 		}
 		
-		geneSize = chromosomes.get(parent2).getDistances().size();
+		geneSize = population.get(parent2).getDistances().size();
 		splitPoint = randomInt((geneSize+1)/2, Math.min(geneSize, MAX_GENES/2));
 		
 		for(int j = geneSize-splitPoint; j < geneSize; j++) {
-			double mr = chromosomes.get(parent2).getRotations().get(j);
-			double md = chromosomes.get(parent2).getDistances().get(j);
+			double mr = population.get(parent2).getRotations().get(j);
+			double md = population.get(parent2).getDistances().get(j);
 			
 			boolean hasMutation = randomInt(1, MUTATION_RATIO) == 1;
 			if(hasMutation) {
@@ -171,8 +194,8 @@ public class GeneticAlgorithm{
 		
 		chromosome.setRotations(moveRotation);
 		chromosome.setDistances(moveDistance);
-		double totalBulletPower = chromosomes.get(parent1).getBulletPower() +
-							chromosomes.get(parent2).getBulletPower();
+		double totalBulletPower = population.get(parent1).getBulletPower() +
+							population.get(parent2).getBulletPower();
 		chromosome.setBulletPower(totalBulletPower / 2);
 	}
 	
@@ -186,6 +209,20 @@ public class GeneticAlgorithm{
 		System.out.println("relativeWins: " + partialNumberOfWins);
 		System.out.println("absoluteRounds: " + totalNumberOfRounds);
 		System.out.println("absoluteWins: " + totalNumberOfWins);
+		writeLog();
+	}
+	
+	private static void writeLog(){	
+		double sum =0;
+		for (Chromosome c : population) {
+			sum+=c.getFitness();
+		}
+		double mean = sum/population.size();
+		try {
+			writer.write(mean+"\n");
+		} catch (IOException e) {
+			System.out.println("ERROR trying to append to log file: "+e.getMessage());
+		}
 	}
 	
 	private static int randomInt(int start, int end) {

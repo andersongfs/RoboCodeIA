@@ -153,7 +153,7 @@ public class GeneticAlgorithm{
 			
 			crossOver(geneSize,splitPoint,parent1,parent2,chromosome);
 		}
-		
+		writeLog();
 		for (int i = 0; i < POPULATION_SIZE; i++) {
 			population.get(i).setFitness(0);
 		}
@@ -209,7 +209,6 @@ public class GeneticAlgorithm{
 		System.out.println("relativeWins: " + partialNumberOfWins);
 		System.out.println("absoluteRounds: " + totalNumberOfRounds);
 		System.out.println("absoluteWins: " + totalNumberOfWins);
-		writeLog();
 	}
 	
 	private static void writeLog(){	

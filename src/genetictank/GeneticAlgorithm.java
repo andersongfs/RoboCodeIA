@@ -219,7 +219,7 @@ public class GeneticAlgorithm{
 		}
 		double mean = sum/population.size();
 		try {
-			writer.write(mean+"\n");
+			writer.write(mean+","+partialNumberOfWins+"\n");
 		} catch (IOException e) {
 			System.out.println("ERROR trying to append to log file: "+e.getMessage());
 		}
